@@ -4,6 +4,11 @@ const bcrypt = require("bcryptjs");
 const captureErrorYup = require("../utils/captureErroYup");
 const jwt = require("jsonwebtoken")
 
+const isEmailAlreadyRegistered = async (email) => {
+    const existingUser = await User.findOne({ email });
+    return !!existingUser;
+};
+
 exports.newUser = async (req, res) => {
     try {
         const { first_name, last_name, email, password, gender } = req.body;
@@ -21,14 +26,10 @@ exports.newUser = async (req, res) => {
 
         await userSchema.validate(req.body, { abortEarly: false });
 
-        const emailValidate = await User.findOne({
-            email
-        })
-
-        if(emailValidate){
+        if (await isEmailAlreadyRegistered(email)) {
             return res.status(422).send({
-                mensagem: "Esse email já foi cadastrado!"
-            })
+                mensagem: "Esse email já foi cadastrado!",
+            });
         }
 
         const passwordHash = await bcrypt.hash(password, 20);
@@ -38,67 +39,70 @@ exports.newUser = async (req, res) => {
             last_name,
             email,
             password: passwordHash,
-            gender
+            gender,
         });
 
         await newUser.save();
-        
+
         return res.status(201).send({
-            mensagem: "Usuário cadastrado com sucesso!"
-        })
+            mensagem: "Usuário cadastrado com sucesso!",
+        });
     } catch (error) {
-        const errors = []
         if (error instanceof yup.ValidationError) {
-            errors.push(captureErrorYup(error)) ;
-            return res.status(500).send({
-                errors 
-            });
+            const errors = [captureErrorYup(error)];
+            return res.status(500).send({ errors });
         } else {
             console.error(error);
             return res.status(500).send({
-                mensagem: "Erro ao efetuar o cadastro!"
+                mensagem: "Erro ao efetuar o cadastro!",
             });
         }
     }
-}
+};
 
-exports.login = async (req, res)=>{
-    try{
-        const {email, password} = req.body 
+exports.login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
 
-        if(!email || !password){
+        if (!email || !password) {
             return res.status(400).send({
-                mensagem: "Todos os campos devem ser preenchidos!"
-            })
-        }
-    
-        const user = await User.findOne({
-            email
-        })
-    
-        const checkPass = await bcrypt.compare(password, user.password)
-        
-        if(!user || !checkPass){
-            return res.status(404).send({
-                mensagem: "Email ou senha estão incorretos!"
-            })
+                mensagem: "Todos os campos devem ser preenchidos!",
+            });
         }
 
-        const secret = process.env.SECRET
+        const user = await User.findOne({
+            email,
+        });
+
+        if (!user) {
+            return res.status(404).send({
+                mensagem: "Email ou senha estão incorretos!",
+            });
+        }
+
+        const checkPass = bcrypt.compareSync(password, user.password);
+
+        if (!checkPass) {
+            return res.status(404).send({
+                mensagem: "Email ou senha estão incorretos!",
+            });
+        }
+
+        const secret = process.env.SECRET;
 
         const token = jwt.sign({
-            id: user._id
-        }, secret)
+            id: user._id,
+        }, secret);
 
         return res.status(200).send({
             mensagem: "Login efetuado com sucesso!",
-            token: token
-        })
-    }catch(error){
-        console.log(error)
+            token: token,
+            id: user._id,
+        });
+    } catch (error) {
+        console.log(error);
         return res.status(500).send({
-            mensagem: "Erro ao efeutar o login!"
-        })
+            mensagem: "Erro ao efetuar o login!",
+        });
     }
-    
-}
+};

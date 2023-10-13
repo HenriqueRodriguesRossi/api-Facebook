@@ -12,6 +12,9 @@ app.use(cors())
 const UserRouter = require("./router/UserRouter")
 app.use(UserRouter)
 
+const PostsRouter = require("./router/PostsRouter")
+app.use(PostsRouter)
+
 app.listen(8080, ()=>{
     console.log("Servidor rodando na porta 8080!")
 })
