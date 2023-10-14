@@ -2,10 +2,12 @@ const mongoose = require("mongoose")
 
 const PostSchema = new mongoose.Schema({
     description:{
-        type: String
+        type: String,
+        required: false
     },
     src:{
-        type: String
+        type: String,
+        required: false
     },
     user: {
         type: mongoose.Schema.Types.ObjectId,
