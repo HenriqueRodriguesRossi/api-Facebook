@@ -2,7 +2,7 @@ const User = require("../models/User");
 const yup = require("yup");
 const bcrypt = require("bcryptjs");
 const captureErrorYup = require("../utils/captureErroYup");
-const jwt = require("jsonwebtoken")
+const jwt = require("jsonwebtoken");
 
 const isEmailAlreadyRegistered = async (email) => {
     const existingUser = await User.findOne({ email });
@@ -90,9 +90,12 @@ exports.login = async (req, res) => {
 
         const secret = process.env.SECRET;
 
+        // Atualizar o token no banco de dados
         const token = jwt.sign({
             id: user._id,
         }, secret);
+
+        await User.findOneAndUpdate({ _id: user._id }, { token });
 
         return res.status(200).send({
             mensagem: "Login efetuado com sucesso!",
@@ -107,61 +110,47 @@ exports.login = async (req, res) => {
     }
 };
 
-exports.findUser = async (req, res)=>{
-    try{
-        const {first_name, last_name} = req.body
+exports.findUser = async (req, res) => {
+    try {
+        const { first_name, last_name } = req.body;
 
-        if(first_name){
-            const regex = new RegExp(first_name, 'i')
-    
-            const users = await User.find({
-                first_name: regex,
-                user: {$ne: req.userId}
-            })
-    
-            const result = users.map(user=>{{
-                first_name: user.first_name
-                last_name: user.last_name || null
-            }})
-
-            if(result.length == 0){
-                return res.status(404).send({
-                    mensagem: "Nenhum usuário encontrado!"
-                })
-            }else{
-                return res.status(200).send({
-                    mensagem: "Pesquisa efetuada com sucesso!",
-                    result
-                })
-            }
-        }else if(last_name){
-            const regex = new RegExp(last_name, 'i')
-    
-            const users = await User.find({
-                last_name: regex,
-                user: {$ne: req.userId}
-            })
-    
-            const result = users.map(user=>{{
-                first_name: user.first_name || null
-                last_name: user.last_name 
-            }})
-
-            if(result.length == 0){
-                return res.status(404).send({
-                    mensagem: "Nenhum usuário encontrado!"
-                })
-            }else{
-                return res.status(200).send({
-                    mensagem: "Pesquisa efetuada com sucesso!",
-                    result
-                })
-            }
+        if (!first_name && !last_name) {
+            return res.status(400).send({
+                mensagem: "Pelo menos um dos campos (first_name ou last_name) deve ser fornecido!",
+            });
         }
-    }catch(error){
-        console.log(error)
+
+        const filter = {};
+
+        if (first_name) {
+            filter.first_name = new RegExp(first_name, 'i');
+        }
+
+        if (last_name) {
+            filter.last_name = new RegExp(last_name, 'i');
+        }
+
+        const users = await User.find(filter);
+
+        const result = users.map(user => ({
+            first_name: user.first_name,
+            last_name: user.last_name || null,
+        }));
+
+        if (result.length === 0) {
+            return res.status(404).send({
+                mensagem: "Nenhum usuário encontrado!",
+            });
+        } else {
+            return res.status(200).send({
+                mensagem: "Pesquisa efetuada com sucesso!",
+                result,
+            });
+        }
+    } catch (error) {
+        console.log(error);
         return res.status(500).send({
-            mensagem: "Erro ao pesquisar usuário!"
-        })
+            mensagem: "Erro ao pesquisar usuário!",
+        });
     }
 }
