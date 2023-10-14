@@ -1,4 +1,5 @@
 const Post = require("../models/Post");
+const fs = require('fs/promises'); 
 
 exports.newPost = async (req, res) => {
     try {
@@ -80,5 +81,36 @@ exports.searchPosts = async (req, res) => {
             mensagem: "Erro ao realizar a busca!",
             error: error.message,
         });
+    }
+};
+
+exports.deletePost = async (req, res) => {
+    try {
+        const postId = req.params.id; // Corrigir aqui
+
+        const post = await Post.findById(postId);
+
+        if (!post) {
+            return res.status(404).json({
+                mensagem: 'Post não encontrado.',
+            });
+        }
+
+        const userId = req.user.id; // Corrigir aqui para obter o ID do usuário autenticado
+
+        if (post.userId !== userId) {
+            return res.status(403).json({ mensagem: 'Você não tem permissão para excluir este post.' });
+        }
+
+        if (post.src) {
+            await fs.unlink(post.src);
+        }
+
+        await Post.findByIdAndDelete(postId);
+
+        return res.status(200).json({ mensagem: 'Post excluído com sucesso.' });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ mensagem: 'Erro ao excluir o post.' });
     }
 };
