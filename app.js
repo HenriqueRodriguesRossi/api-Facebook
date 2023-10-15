@@ -9,10 +9,10 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({extended: true}))
 app.use(cors())
 
-const UserRouter = require("./router/UserRouter")
+const UserRouter = require("./controllers/UserController")
 app.use(UserRouter)
 
-const PostsRouter = require("./router/PostsRouter")
+const PostsRouter = require("./controllers/PostController")
 app.use(PostsRouter)
 
 app.listen(8080, ()=>{

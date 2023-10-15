@@ -3,13 +3,15 @@ const yup = require("yup");
 const bcrypt = require("bcryptjs");
 const captureErrorYup = require("../utils/captureErroYup");
 const jwt = require("jsonwebtoken");
+const router = require("express").Router()
+const checkToken = require("../utils/checkToken")
 
 const isEmailAlreadyRegistered = async (email) => {
     const existingUser = await User.findOne({ email });
     return !!existingUser;
 };
 
-exports.newUser = async (req, res) => {
+router.post("/new-user", async (req, res) => {
     try {
         const { first_name, last_name, email, password, gender } = req.body;
 
@@ -58,9 +60,9 @@ exports.newUser = async (req, res) => {
             });
         }
     }
-};
+})
 
-exports.login = async (req, res) => {
+router.post("/login", async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -108,9 +110,9 @@ exports.login = async (req, res) => {
             mensagem: "Erro ao efetuar o login!",
         });
     }
-};
+})
 
-exports.findUser = async (req, res) => {
+router.get("/find-user", checkToken, async (req, res) => {
     try {
         const { first_name, last_name } = req.body;
 
@@ -153,4 +155,6 @@ exports.findUser = async (req, res) => {
             mensagem: "Erro ao pesquisar usuário!",
         });
     }
-}
+})
+
+module.exports = router

@@ -1,8 +1,11 @@
 const Post = require("../models/Post");
 const fs = require('fs/promises');
 const yup = require('yup');
+const checkToken = require("../utils/checkToken");
+const router = require("express").Router()
+const upload = require("../utils/multer")
 
-exports.newPost = async (req, res) => {
+router.post("/new-post", checkToken, upload.single("src"), async (req, res) => {
     try {
         const { description } = req.body;
         const file = req.file;
@@ -45,9 +48,9 @@ exports.newPost = async (req, res) => {
             error: error.message,
         });
     }
-};
+})
 
-exports.searchPosts = async (req, res) => {
+router.get("/find-post",checkToken,  async (req, res) => {
     try {
         const { description } = req.body;
 
@@ -89,9 +92,9 @@ exports.searchPosts = async (req, res) => {
             error: error.message,
         });
     }
-};
+})
 
-exports.deletePost = async (req, res) => {
+router.delete("/delete-post/:id", checkToken, async (req, res) => {
     try {
         const postId = req.params.id;
 
@@ -123,4 +126,6 @@ exports.deletePost = async (req, res) => {
             error: error.message,
         });
     }
-};
+})
+
+module.exports = router
